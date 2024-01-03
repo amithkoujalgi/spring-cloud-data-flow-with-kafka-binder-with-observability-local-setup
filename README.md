@@ -95,6 +95,12 @@ The docker-compose setup defines all the base services required to run the entir
 - [Docker Compose](https://docs.docker.com/compose/)
 - [make](https://formulae.brew.sh/formula/make)
 
+### Install
+
+```shell
+make install
+```
+
 ### Build
 
 ```shell
