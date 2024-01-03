@@ -3,11 +3,15 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PARENT_DIR="$(dirname "$SCRIPT_DIR")"
 
-jps | grep 'spring-cloud-skipper-server-2.11.1.jar' | cut -d' ' -f1 | xargs kill -9
-jps | grep 'spring-cloud-localhost-2.11.1.jar' | cut -d' ' -f1 | xargs kill -9
+jps | grep 'scdf-skipper.jar' | cut -d' ' -f1 | xargs kill -9
+jps | grep 'scdf-server.jar' | cut -d' ' -f1 | xargs kill -9
+
+jps | grep 'price-update-service-0.0.1-SNAPSHOT.jar' | cut -d' ' -f1 | xargs kill -9
+jps | grep 'price-update-confirmation-service-0.0.1-SNAPSHOT.jar' | cut -d' ' -f1 | xargs kill -9
+jps | grep 'instrument-generation-service-0.0.1-SNAPSHOT.jar' | cut -d' ' -f1 | xargs kill -9
 
 java \
-  -jar spring-cloud-skipper-server-2.11.1.jar &
+  -jar ~/scdf/scdf-skipper.jar &
 
 # Wait until 7577 port is up
 while ! nc -z localhost 7577; do
@@ -17,7 +21,7 @@ done
 echo "Skipper server is up and running! Starting dataflow server..."
 
 java \
-  -jar spring-cloud-localhost-2.11.1.jar &
+  -jar ~/scdf/scdf-server.jar &
 
 # Wait until 9393 port is up
 while ! nc -z localhost 9393; do
