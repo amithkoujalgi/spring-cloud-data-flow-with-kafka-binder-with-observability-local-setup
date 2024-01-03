@@ -66,29 +66,6 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: 'kafka-svc:19092'
       AUTH_TYPE: 'DISABLED'
 
-  skipper-server:
-    user: root
-    image: springcloud/spring-cloud-skipper-server:${SKIPPER_VERSION:-2.11.2-SNAPSHOT}${BP_JVM_VERSION:-}
-    ports:
-      - "7577:7577"
-      - ${APPS_PORT_RANGE:-20000-20195:20000-20195}
-    environment:
-      - LANG=en_US.utf8
-      - LC_ALL=en_US.utf8
-      - JDK_JAVA_OPTIONS=-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8
-      - SERVER_PORT=7577
-      - SPRING_CLOUD_SKIPPER_SERVER_PLATFORM_LOCAL_ACCOUNTS_DEFAULT_PORTRANGE_LOW=20000
-      - SPRING_CLOUD_SKIPPER_SERVER_PLATFORM_LOCAL_ACCOUNTS_DEFAULT_PORTRANGE_HIGH=20190
-      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_CLOUD_SKIPPER_SERVER_DEPLOYER=ERROR
-      - MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED=true
-      - MANAGEMENT_METRICS_EXPORT_PROMETHEUS_RSOCKET_ENABLED=true
-      - MANAGEMENT_METRICS_EXPORT_PROMETHEUS_RSOCKET_HOST=prometheus-rsocket-proxy
-      - MANAGEMENT_METRICS_EXPORT_PROMETHEUS_RSOCKET_PORT=7001
-      #- SPRING_APPLICATION_JSON={"spring.jpa.properties.hibernate.generate_statistics":true}
-    restart: always
-    volumes:
-      - ${HOST_MOUNT_PATH:-../../}:${DOCKER_MOUNT_PATH:-/home/cnb/scdf}
-
   prometheus-rsocket-proxy:
     image: micrometermetrics/prometheus-rsocket-proxy:1.5.2
     container_name: prometheus-rsocket-proxy
