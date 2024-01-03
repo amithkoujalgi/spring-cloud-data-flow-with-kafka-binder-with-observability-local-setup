@@ -53,13 +53,6 @@ services:
       KAFKA_JMX_HOSTNAME: "${DOCKER_HOST_IP:-127.0.0.1}"
       KAFKA_AUTHORIZER_CLASS_NAME: "kafka.security.authorizer.AclAuthorizer"
       KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
-    #      EXTRA_ARGS:
-    #        -javaagent:/usr/share/jmx-exporter/jmx_prometheus_javaagent-0.20.0.jar=1234:/usr/share/jmx-exporter/kafka_broker.yml
-    #        -javaagent:/usr/share/jmx-exporter/jolokia-jvm-1.7.1.jar=port=1235,host=*
-    #    volumes:
-    #      - ./config/kafka/jmx_prometheus_javaagent-0.20.0.jar:/usr/share/jmx-exporter/jmx_prometheus_javaagent-0.20.0.jar
-    #      - ./config/kafka/jolokia-jvm-1.7.2.jar:/usr/share/jmx-exporter/jolokia-jvm-1.7.1.jar
-    #      - ./config/kafka/kafka_broker.yml:/usr/share/jmx-exporter/kafka_broker.yml
     depends_on:
       - zk-svc
 
@@ -72,35 +65,6 @@ services:
       KAFKA_CLUSTERS_0_NAME: 'Local K8 Kafka Cluster'
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: 'kafka-svc:19092'
       AUTH_TYPE: 'DISABLED'
-
-  dataflow-server:
-    user: root
-    image: springcloud/spring-cloud-dataflow-server:${DATAFLOW_VERSION:-2.11.2-SNAPSHOT}${BP_JVM_VERSION:-}
-    ports:
-      - "9393:9393"
-    environment:
-      - LANG=en_US.utf8
-      - LC_ALL=en_US.utf8
-      - JDK_JAVA_OPTIONS=-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8
-      # Set CLOSECONTEXTENABLED=true to ensure that the CRT launcher is closed.
-      - SPRING_CLOUD_DATAFLOW_APPLICATIONPROPERTIES_TASK_SPRING_CLOUD_TASK_CLOSECONTEXTENABLED=true
-      - SPRING_CLOUD_SKIPPER_CLIENT_SERVER_URI=${SKIPPER_URI:-http://skipper-server:7577}/api
-      # (Optionally) authenticate the default Docker Hub access for the App Metadata access.
-      - SPRING_CLOUD_DATAFLOW_CONTAINER_REGISTRY_CONFIGURATIONS_DEFAULT_USER=${METADATA_DEFAULT_DOCKERHUB_USER}
-      - SPRING_CLOUD_DATAFLOW_CONTAINER_REGISTRY_CONFIGURATIONS_DEFAULT_SECRET=${METADATA_DEFAULT_DOCKERHUB_PASSWORD}
-      - SPRING_CLOUD_DATAFLOW_CONTAINER_REGISTRYCONFIGURATIONS_DEFAULT_USER=${METADATA_DEFAULT_DOCKERHUB_USER}
-      - SPRING_CLOUD_DATAFLOW_CONTAINER_REGISTRYCONFIGURATIONS_DEFAULT_SECRET=${METADATA_DEFAULT_DOCKERHUB_PASSWORD}
-      - MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED=true
-      - MANAGEMENT_METRICS_EXPORT_PROMETHEUS_RSOCKET_ENABLED=true
-      - MANAGEMENT_METRICS_EXPORT_PROMETHEUS_RSOCKET_HOST=prometheus-rsocket-proxy
-      - MANAGEMENT_METRICS_EXPORT_PROMETHEUS_RSOCKET_PORT=7001
-      #- SPRING_APPLICATION_JSON={"spring.jpa.properties.hibernate.generate_statistics":true}
-      - SPRING_CLOUD_DATAFLOW_METRICS_DASHBOARD_URL=http://localhost:3000
-    depends_on:
-      - skipper-server
-    restart: always
-    volumes:
-      - ${HOST_MOUNT_PATH:-../../}:${DOCKER_MOUNT_PATH:-/home/cnb/scdf}
 
   skipper-server:
     user: root
@@ -125,18 +89,6 @@ services:
     volumes:
       - ${HOST_MOUNT_PATH:-../../}:${DOCKER_MOUNT_PATH:-/home/cnb/scdf}
 
-  app-import-task:
-    image: springcloud/baseimage:1.0.4
-    depends_on:
-      - dataflow-server
-    command: >
-      /bin/bash -c "./wait-for-it.sh -t 360 dataflow-server:9393;
-        wget 'http://dataflow-server:9393/apps/source/instrument-generation-service' --no-check-certificate --post-data='bootVersion=2&uri=file:///home/cnb/scdf/services/instrument-generation-service/target/instrument-generation-service-0.0.1-SNAPSHOT.jar';
-        wget 'http://dataflow-server:9393/apps/processor/price-update-service' --no-check-certificate --post-data='bootVersion=2&uri=file:///home/cnb/scdf/services/price-update-service/target/price-update-service-0.0.1-SNAPSHOT.jar';
-        wget 'http://dataflow-server:9393/apps/sink/price-update-confirmation-service' --no-check-certificate --post-data='bootVersion=2&uri=file:///home/cnb/scdf/services/price-update-confirmation-service/target/price-update-confirmation-service-0.0.1-SNAPSHOT.jar';
-        wget --method=POST 'http://dataflow-server:9393/streams/definitions?name=instrument-stream&definition=instrument-generation-service%20%7C%20price-update-service%20%7C%20price-update-confirmation-service&description=';
-        wget 'http://dataflow-server:9393/streams/deployments/instrument-stream' --header='Accept: application/json' --header='Content-Type: application/json' --post-data='{\"app.*.spring.cloud.stream.kafka.binder.brokers\": \"kafka-svc:19092\",\"app.*.spring.cloud.stream.kafka.binder.zkNodes\": \"zk-svc:2181\"}';"
-
   prometheus-rsocket-proxy:
     image: micrometermetrics/prometheus-rsocket-proxy:1.5.2
     container_name: prometheus-rsocket-proxy
@@ -158,18 +110,6 @@ services:
     container_name: grafana
     ports:
       - '3000:3000'
-
-#  grafana-new:
-#    image: grafana/grafana
-#    extra_hosts: [ 'host.docker.internal:host-gateway' ]
-#    environment:
-#      - GF_AUTH_ANONYMOUS_ENABLED=true
-#      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-#      - GF_AUTH_DISABLE_LOGIN_FORM=true
-#      - GF_INSTALL_PLUGINS=redis-datasource
-#    ports:
-#      - "3001:3000"
-#    restart: unless-stopped
 
   prometheus:
     image: springcloud/spring-cloud-dataflow-prometheus-local:${DATAFLOW_VERSION:-2.11.2-SNAPSHOT}

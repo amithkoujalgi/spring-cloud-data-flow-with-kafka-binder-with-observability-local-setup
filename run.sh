@@ -51,5 +51,5 @@ echo "Setting global config..."
 wget 'http://localhost:9393/streams/deployments/instrument-stream' \
   --header='Accept: application/json' \
   --header='Content-Type: application/json' \
-  --post-data='{"app.*.spring.cloud.stream.kafka.binder.brokers": "kafka-svc:19092","app.*.spring.cloud.stream.kafka.binder.zkNodes": "zk-svc:2181"}';
+  --post-data='{"app.*.spring.cloud.stream.kafka.binder.brokers": "localhost:9092","app.*.spring.cloud.stream.kafka.binder.zkNodes": "localhost:2181"}';
 
